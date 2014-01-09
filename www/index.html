@@ -11,6 +11,8 @@
     rel='stylesheet'
     type="text/css">
 
+<script src="/scripts/chartjs/Chart.js"></script>
+
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 </head>
@@ -21,7 +23,7 @@
 <h1>Craps! How to win everytime!*</h1>
 <sub>*or at least once in a while</sub>
 
-<h2>The pass bet</h2>
+<h3>The pass bet</h3>
 
 <p>This might not be the easiest bet for a newbie to learn, but
 it's the best place to start. Craps is a game of points. There
@@ -48,10 +50,14 @@ phase.</p>
 The goal of the come-out phase is to establish a point. That is, the player is
 trying to roll one of the numbers above that we have established as points (4, 5, 6, 8, 9 or 10).
 
-<p>You may ask yourself, what about the other numbers? namely 2, 3, 7, 11, and 12? These numbers
+<p><img src="img/passline.jpg" class="img-rounded" width="120px" style="float:right" />
+You may ask yourself, what about the other numbers? namely 2, 3, 7, 11, and 12? These numbers
 are not points. They can all be good or bad depending on the bet. In the come-out phase, the a player
 must bet on the <strong>pass line</strong> or the <strong>do not pass line</strong>.
 
+
+
+</p>
 <p>Let's say the shooter has put $10 down on the <strong>pass line</strong>. There are 3 outcomes from
 any roll when we are in the come-out phase and the shooter has money bet on the <strong>pass line</strong>.
 
@@ -66,11 +72,92 @@ any roll when we are in the come-out phase and the shooter has money bet on the 
  </li>
 
  <li> The shooter rolls a 2, 3, or 12. This is where the game gets it's name as this roll is called <strong>craps</strong>.
-      Anyone with money on the pass line loses the money. So our shooter loses his $10. If the shooter wishes
+      Anyone with money on the pass line loses the money. So our shooter loses his $10. If the shooter wishes he may
+      place another bet on the pass-line to continue shooting.
+ </li>
+</ul>
 
 </p>
 
-<img src="img/passline.jpg" width="300px" />
+<p>So let's do a sample roll. Imagine we had bet $10. After you click 'Roll', you will see your dice value
+and also the result of the bet.</p>
+
+
+<div class="well">
+<p>Phase:Come-Out | Puck is 'Off'</p>
+<img id="d1" src="img/dice_0.png" /> <img id="d2" src="img/dice_0.png" />
+<span style="margin-left:20px; font-size:24px">You rolled a(n) :
+<span id="rollvalue" style="font-weight:800; font-size:36px"></span></span>
+<span id="betresult" style="margin-left:20px font-size:36px"></span>
+<button id="rollbtn" class="btn btn-primary" style="display:block; margin-top:10px;">Roll!</button>
+</div>
+
+<h3>The point phase</h3>
+<p>
+Once a come-out number has been established, the dealer's puck is flipped to on. At
+this point, the shooter's job is to hit the same number again that he established as
+the point.
+</p>
+
+<p>
+During the point phase, players can make bets on numbers hitting before a
+7 occurs. When a 7 occurs, all bets are wiped off the table, and the dice
+passes to the next player who then becomes the shooter</p>
+
+<p>
+Let's keep things simple and explore betting just the pass line.
+When you put your money down, you have a 8/36 chance of winning
+immediately (6 combinations to make 7 and 2 combinations to make 11).
+You also have 4/36 chance to lose immediately (this is 1 combination
+for 2, 2 combinations for 3 and 1 combination for 12).
+</p>
+<p>
+The attentive math student will see that 8/36  = 2/9 = <strong>22%</strong> chance
+of winning immidiately. Losing immediately is 4/36 = 1/9 = <strong>11%</strong>.
+</p>
+
+<p>The remaining <strong>66%</strong> of the time, the game will entire the points
+phase, that is 2 out of every 3 rolls from the come-out phase should enter the
+points phase. Once we enter the points phase, the only roll that will
+win money for the player is one in which his point comes up.
+</p>
+
+<p>
+Since each number has different odds of winning, a player is allowed to bet
+odds that will be payed in addition to his pass-line bet. We'll keep things
+simple for now, and just assume the player will get paid 1:1 for his pass-line bet
+</p>
+
+<p>
+So if our shooter rolls a 6, on every roll he has a 5/36 chance of winning.
+He also has a 6/36 chance of losing (since rolling a 7 will end the round).
+The other 25 rolls are safe. They don't end the round, but also don't make
+the shooter money if he just bets the pass round.
+<p>
+
+<p>
+Let's run an experiment. Say our shooter starts out with $100. Let's
+graph his money if he only bets the pass-line. We'll go until
+he runs out of money.
+<p>
+
+<div class="well">
+<h3>Start money: $100 |
+Bet Size: $10</h3>
+Rolls:<span id="sim_num_rolls"></span>
+<br />
+Max Money:<span id="sim_max_money"></span>
+<br />
+Max Rolls by Shooter:<span id="sim_max_rolls_by_shooter"></span>
+<br />
+<canvas id="simulation1" width="300px" height="200px">
+
+</canvas>
+
+
+<button id="sim1btn" class="btn btn-primary" style="display:block; margin-top:10px;">Simulate!</button>
+</div>
+
 
 <script type="text/javascript"
     src="http://codeorigin.jquery.com/jquery-2.0.3.min.js"></script>
@@ -79,9 +166,185 @@ any roll when we are in the come-out phase and the shooter has money bet on the 
     src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
 
 <script type="text/javascript">
-$(document).ready(function () {{
 
-}});
+
+$(document).ready(function () {
+
+ dice_srcs = new Array();
+
+ dice_srcs[0] = 'img/dice_1.png';
+ dice_srcs[1] = 'img/dice_2.png';
+ dice_srcs[2] = 'img/dice_3.png';
+ dice_srcs[3] = 'img/dice_4.png';
+ dice_srcs[4] = 'img/dice_5.png';
+ dice_srcs[5] = 'img/dice_6.png';
+
+$('#rollbtn').on('click', function()
+ {
+    //reset betresult and rollvalue
+    $('#betresult').html('');
+    $('#rollvalue').html('');
+    var i = 0;
+    var randomnum1 = 0;
+    var randomnum2 = 0;
+    var change_dice = setInterval(function()
+    {
+       i++;
+       randomnum1 = Math.floor(Math.random()*6);
+       randomnum2 = Math.floor(Math.random()*6);
+       $('#d1').attr('src', dice_srcs[randomnum1]);
+       $('#d2').attr('src', dice_srcs[randomnum2]);
+    }, 100);
+
+    setTimeout(function(){
+
+       clearInterval(change_dice);
+
+       rollvalue = randomnum1 + randomnum2 + 2 //random num is 0 -5
+       $('#rollvalue').html(rollvalue);
+
+       if (rollvalue == 7 || rollvalue == 11)
+       {
+         $('#betresult').html('You won $10!');
+       }
+       else if(rollvalue == 2 || rollvalue == 12 || rollvalue == 3)
+       {
+         $('#betresult').html('You lost $10!');
+       }
+       else
+       {
+         $('#betresult').html('Your money stays. We enter the next phase.'
+                              + 'The point is <strong>' + rollvalue + '</strong>');
+       }
+
+
+    }, 1000);
+
+ });
+
+$('#sim1btn').on('click', function()
+ {
+
+   // Let's simulate rolling until we run out of money
+
+   var bankroll = 100;
+   var bet = 10;
+
+
+   var rolls = 0;
+   var rolls_by_shooter = 0;
+   var max_rolls_by_shooter = 0;
+   var rolls = 0;
+   var maxmoney = bankroll;
+
+   var point = -1;
+
+   while(bankroll > 0)
+   {
+      rolls++;
+      rolls_by_shooter++;
+      //pick 2 numbers
+      dice1 = Math.floor(Math.random()*6);
+      dice2 = Math.floor(Math.random()*6);
+
+      total_roll = dice1 + dice2 + 2;
+
+      if (point > 0 && point == total_roll)
+      {
+       // winner!
+       bankroll = bankroll + bet;
+       point = -1;
+      }
+      else if(point > 0 && total_roll == 7)
+      {
+       //loser!
+       bankroll = bankroll - bet;
+       rolls_by_shooter = 0;
+       point = -1;
+      }
+      else if(point < 0 && (total_roll == 2 || total_roll == 3 || total_roll == 12))
+      {
+         bankroll = bankroll - bet;
+      }
+      else if(point < 0 && (total_roll == 7 || total_roll == 11 ))
+      {
+         //winner!
+         bankroll = bankroll + bet;
+      }
+      else if(point < 0)
+      {
+        point = total_roll;
+      }
+
+
+     //check max money
+     if (bankroll > maxmoney)
+     {
+       maxmoney = bankroll;
+     }
+
+     //check rolls on max
+     if(rolls_by_shooter > max_rolls_by_shooter)
+     {
+        max_rolls_by_shooter = rolls_by_shooter;
+     }
+
+   }
+
+   //update fields
+   $('#sim_num_rolls').html(rolls);
+   $('#sim_max_money').html(maxmoney);
+   $('#sim_max_rolls_by_shooter').html(max_rolls_by_shooter);
+ });
+
+/* Simulation 1 Chart */
+    var canvaswidth = 300;
+    var canvasheight = 100;
+    //Get context with jQuery - using jQuery's .get() method.
+    var ctx = $("#simulation1").get(0).getContext("2d");
+    //This will get the first returned node in the jQuery collection.
+
+    $('#sim1btn').on('click', function(evt)
+    {
+      // Store the current transformation matrix
+      ctx.save();
+
+      // Use the identity matrix while clearing the canvas
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.clearRect(0, 0, canvaswidth, canvasheight);
+
+      // Restore the transform
+      ctx.restore();
+
+      new Chart(ctx).Line(get_simulation_1_data());
+
+    });
+
+
+});
+
+
+function get_simulation_1_data()
+{
+    dataset = [];
+
+    var data = {
+    labels : ['revenue', 'profit', 'margin', 'unitssold'],
+    datasets : [
+        {
+            fillColor : "rgba(220,220,220,0.5)",
+            strokeColor : "rgba(110,110,110,0.5)",
+            pointColor : "rgba(110,110,110,0.5)",
+            pointStrokeColor : "#fff",
+            data : [1,4,3,6,8],
+        }
+      ]
+    }
+
+  return data;
+}
+
+
 </script>
 
 </body>
