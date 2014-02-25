@@ -3,16 +3,22 @@
 <html>
 
 <head>
-
+<meta http-equiv="content-type" content="text/html; charset=UTF-8">
 <title>Learn craps</title>
-
+<link href="/scripts/novus/src/nv.d3.css" rel="stylesheet" type="text/css">
 <link
     href="//netdna.bootstrapcdn.com/bootstrap/3.0.2/css/bootstrap.min.css"
     rel='stylesheet'
     type="text/css">
 
-<script src="/scripts/chartjs/Chart.js"></script>
+<script type="text/javascript"
+    src="http://codeorigin.jquery.com/jquery-2.0.3.min.js"></script>
 
+<script src="/scripts/novus/lib/d3.v3.js"></script>
+<script src="/scripts/novus/nv.d3.js"></script>
+<script src="/scripts/novus/src/models/legend.js"></script>
+<script src="/scripts/novus/src/models/line.js"></script>
+<script src="/scripts/novus/src/utils.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 </head>
@@ -142,31 +148,29 @@ he runs out of money.
 <p>
 
 <div class="well">
-<h3>Start money: $100 |
-Bet Size: $10</h3>
-Rolls:<span id="sim_num_rolls"></span>
-<br />
-Max Money:<span id="sim_max_money"></span>
-<br />
+<h3>Start money: $<input type="number" name="bankroll"
+                         id="sim1_bankroll" value="100" style="width:80px" /> |
+Bet Size: $<input type="number" name="bet"
+                         id="sim1_bet" value="10" style="width:80px" /> |
+Lay Odds: $<input type="number" name="odds"
+                         id="sim1_odds" value="0" style="width:80px" /></h3>
 Max Rolls by Shooter:<span id="sim_max_rolls_by_shooter"></span>
 <br />
-<canvas id="simulation1" width="300px" height="200px">
-
-</canvas>
-
 
 <button id="sim1btn" class="btn btn-primary" style="display:block; margin-top:10px;">Simulate!</button>
+
+<div id="chart">
+<svg >
+
+</svg>
 </div>
 
 
-<script type="text/javascript"
-    src="http://codeorigin.jquery.com/jquery-2.0.3.min.js"></script>
+</div>
 
-<script type="text/javascript"
-    src="//netdna.bootstrapcdn.com/bootstrap/3.0.2/js/bootstrap.min.js"></script>
+</body>
 
 <script type="text/javascript">
-
 
 $(document).ready(function () {
 
@@ -222,15 +226,19 @@ $('#rollbtn').on('click', function()
 
  });
 
+
+/* Simulation 1 Chart */
+
+
 $('#sim1btn').on('click', function()
  {
 
    // Let's simulate rolling until we run out of money
 
-   var bankroll = 100;
-   var bet = 10;
-
-
+   var bankroll = parseInt($('#sim1_bankroll').val());
+   var bet = parseInt($('#sim1_bet').val());
+   var odds_bet = parseInt($('#sim1_odds').val());
+   var rolls_array = new Array();
    var rolls = 0;
    var rolls_by_shooter = 0;
    var max_rolls_by_shooter = 0;
@@ -238,6 +246,7 @@ $('#sim1btn').on('click', function()
    var maxmoney = bankroll;
 
    var point = -1;
+   rolls_array.push(bankroll)
 
    while(bankroll > 0)
    {
@@ -253,6 +262,9 @@ $('#sim1btn').on('click', function()
       {
        // winner!
        bankroll = bankroll + bet;
+       //add odds too
+       odds_win = calculateOdds(point, odds_bet);
+       bankroll = bankroll + odds_win;
        point = -1;
       }
       else if(point > 0 && total_roll == 7)
@@ -260,6 +272,9 @@ $('#sim1btn').on('click', function()
        //loser!
        bankroll = bankroll - bet;
        rolls_by_shooter = 0;
+
+       //subtract odds too
+       bankroll = bankroll - odds_bet;
        point = -1;
       }
       else if(point < 0 && (total_roll == 2 || total_roll == 3 || total_roll == 12))
@@ -289,54 +304,62 @@ $('#sim1btn').on('click', function()
         max_rolls_by_shooter = rolls_by_shooter;
      }
 
+     rolls_array.push(bankroll)
+
    }
 
    //update fields
-   $('#sim_num_rolls').html(rolls);
-   $('#sim_max_money').html(maxmoney);
    $('#sim_max_rolls_by_shooter').html(max_rolls_by_shooter);
+
+
+   nv.addGraph(function() {
+    var chart = nv.models.lineChart();
+
+    chart.xAxis
+        .axisLabel('Rolls')
+        .tickFormat(d3.format(',r'));
+
+    chart.yAxis
+        .axisLabel('Bankroll ($)')
+       .tickFormat(d3.format('.02f'));
+
+   d3.select('#chart svg')
+       .datum(sinAndCos(rolls_array))
+     .transition().duration(500)
+       .call(chart);
+
+   nv.utils.windowResize(function() { d3.select('#chart svg').call(chart) });
+
+   return chart;
+   });
+
  });
 
-/* Simulation 1 Chart */
-    var canvaswidth = 300;
-    var canvasheight = 100;
-    //Get context with jQuery - using jQuery's .get() method.
-    var ctx = $("#simulation1").get(0).getContext("2d");
-    //This will get the first returned node in the jQuery collection.
 
-    $('#sim1btn').on('click', function(evt)
-    {
-      // Store the current transformation matrix
-      ctx.save();
-
-      // Use the identity matrix while clearing the canvas
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.clearRect(0, 0, canvaswidth, canvasheight);
-
-      // Restore the transform
-      ctx.restore();
-
-      new Chart(ctx).Line(get_simulation_1_data());
-
-    });
 
 
 });
 
-
-function get_simulation_1_data()
+function get_simulation_1_data(rolls_array)
 {
     dataset = [];
 
+    labels_array = new Array();
+
+    for( var i = 0; i < rolls_array.length; i++)
+    {
+      labels_array.push(i);
+    }
+
     var data = {
-    labels : ['revenue', 'profit', 'margin', 'unitssold'],
+    labels : labels_array,
     datasets : [
         {
             fillColor : "rgba(220,220,220,0.5)",
             strokeColor : "rgba(110,110,110,0.5)",
             pointColor : "rgba(110,110,110,0.5)",
             pointStrokeColor : "#fff",
-            data : [1,4,3,6,8],
+            data : rolls_array,
         }
       ]
     }
@@ -347,6 +370,41 @@ function get_simulation_1_data()
 
 </script>
 
-</body>
+<script type="text/javascript">
+
+
+function calculateOdds(point, odds_bet)
+{
+  if (point == 4 || point == 10)
+  {
+     return 2 * odds_bet;
+  }
+  else if(point == 6 || point == 8)
+  {
+     return (6 * odds_bet) / 5;
+  }
+  else
+  {
+     return (3 * odds_bet) / 2;
+  }
+}
+
+function sinAndCos(rolls_array) {
+  var rolls_bankroll = [];
+
+  for (var i = 0; i < rolls_array.length; i++) {
+    rolls_bankroll.push({x: i, y: rolls_array[i]});
+  }
+
+  return [
+    {
+      values: rolls_bankroll,
+      key: "Rolls",
+      color: "#ff7f0e"
+    }  ];
+}
+
+</script>
+
 
 </html>
