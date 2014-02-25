@@ -1,0 +1,31 @@
+<VirtualHost *:80>
+    ServerName servername.com
+    ServerAdmin webmaster@localhost
+
+	DocumentRoot /**PATH**/checkouts/craps/www/
+
+    <Directory "/**PATH**/checkouts/hairsplinter/www">
+        Order allow,deny
+        Allow from all
+    </Directory>
+
+
+    LogLevel info
+
+    CustomLog /var/log/apache2/craps-test.loc-access.log combined
+    ErrorLog /var/log/apache2/craps.loc-error.log
+    ServerSignature On
+
+
+    ProxyRequests Off
+
+    <Proxy *>
+    Order deny,allow
+    Allow from all
+    </Proxy>
+
+    # Tell apache to proxy everything else to the inner gunicorn app.
+    #RewriteRule ^/(.*)$ http://localhost:7777/$1 [proxy]
+
+
+</VirtualHost>
